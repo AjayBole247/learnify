@@ -1,91 +1,67 @@
-import { useState } from "react";
-import useAuthUser from "../hooks/useAuthUser";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { completeOnboarding } from "../lib/api";
-import { CameraIcon } from "lucide-react";
-import { LoaderIcon, MapPinIcon, ShipWheelIcon, ShuffleIcon } from "lucide-react";
-import { LANGUAGES } from "../constants/index"
-const OnboardingPage = () => {
+import useAuthUser from "../hooks/useAuthUser";
+import { updateProfile } from "../lib/api";
+import { CameraIcon, MapPinIcon, UserIcon } from "lucide-react";
+import { LANGUAGES } from "../constants/index";
+
+const ProfilePage = () => {
   const { authUser } = useAuthUser();
   const queryClient = useQueryClient();
-
   const [formState, setFormState] = useState({
-    fullName: authUser?.fullName || "",
-    bio: authUser?.bio || "",
-    nativeLanguage: authUser?.nativeLanguage || "",
-    learningLanguage: authUser?.learningLanguage || "",
-    location: authUser?.location || "",
-    profilePic: authUser?.profilePic || "",
+    fullName: "",
+    bio: "",
+    nativeLanguage: "",
+    learningLanguage: "",
+    location: "",
   });
 
-  const { mutate: onboardingMutation, isPending } = useMutation({
-    mutationFn: completeOnboarding,
+  useEffect(() => {
+    if (authUser) {
+      setFormState({
+        fullName: authUser.fullName || "",
+        bio: authUser.bio || "",
+        nativeLanguage: authUser.nativeLanguage || "",
+        learningLanguage: authUser.learningLanguage || "",
+        location: authUser.location || "",
+      });
+    }
+  }, [authUser]);
+
+  const { mutate: profileMutation, isPending } = useMutation({
+    mutationFn: updateProfile,
     onSuccess: () => {
-      toast.success("Profile onboarded successfully");
+      toast.success("Profile updated successfully");
       queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
     onError: (error) => {
-      toast.error(error.response.data.message);
+      toast.error(error?.response?.data?.message || "Unable to update profile");
     },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onboardingMutation(formState);
+    profileMutation(formState);
   };
-
- const handleRandomAvatar = () => {
-  const randomSeed = crypto.randomUUID();
-
-  const randomAvatar = `https://api.dicebear.com/9.x/adventurer/svg?seed=${randomSeed}`;
-
-  setFormState((prev) => ({
-    ...prev,
-    profilePic: randomAvatar,
-  }));
-
-  toast.success("Random profile picture generated!");
-};
 
   return (
     <div className="max-h-96 bg-base-100 flex items-center justify-center py-4 mt-5 mb-5 ">
       <div className="border border-primary/25  h-screen card bg-base-200 w-full max-w-3xl shadow-xl mt-25 mb-5  overflow-y-auto">
         <div className="card-body p-6 sm:p-8">
-          <h1 className="text-1xl sm:text-2xl font-bold text-center mb-6">Complete Your Profile</h1>
+          <h1 className="text-2xl font-bold text-center mb-6">Edit Profile</h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* PROFILE PIC CONTAINER */}
             <div className="flex flex-col items-center justify-center space-y-4">
-              {/* IMAGE PREVIEW */}
-              <div className="w-32 h-32 rounded-full bg-base-300 overflow-hidden">
-                {formState.profilePic ? (
-                  <img
-                    src={formState.profilePic}
-                    alt="Profile Preview"
-                    className="w-full h-full object-cover"
-                  />
+              <div className="w-32 h-32 rounded-full bg-base-300 overflow-hidden flex items-center justify-center">
+                {authUser?.profilePic ? (
+                  <img src={authUser.profilePic} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <CameraIcon className="w-12 h-12 text-base-content opacity-40" />
-                  </div>
+                  <UserIcon className="w-14 h-14 text-base-content opacity-50" />
                 )}
-              </div>
-
-              {/* Generate Random Avatar BTN */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleRandomAvatar}
-                  className="btn btn-accent"
-                >
-                  <ShuffleIcon className="w-4 h-4 mr-2" />
-                  Generate Random Avatar
-                </button>
               </div>
             </div>
 
-            {/* FULL NAME */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Full Name</span>
@@ -100,7 +76,6 @@ const OnboardingPage = () => {
               />
             </div>
 
-            {/* BIO */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Bio</span>
@@ -110,13 +85,11 @@ const OnboardingPage = () => {
                 value={formState.bio}
                 onChange={(e) => setFormState({ ...formState, bio: e.target.value })}
                 className="textarea textarea-bordered h-24"
-                placeholder="Tell others about yourself and your language learning goals"
+                placeholder="Tell others about yourself"
               />
             </div>
 
-            {/* LANGUAGES */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* NATIVE LANGUAGE */}
               <div className="form-control">
                 <label className="label">
                   <span className="label-text">Native Language</span>
@@ -136,7 +109,6 @@ const OnboardingPage = () => {
                 </select>
               </div>
 
-              {/* LEARNING LANGUAGE */}
               <div className="form-control">
                 <label className="label">
                   <span className="label-text">Learning Language</span>
@@ -157,7 +129,6 @@ const OnboardingPage = () => {
               </div>
             </div>
 
-            {/* LOCATION */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Location</span>
@@ -175,18 +146,14 @@ const OnboardingPage = () => {
               </div>
             </div>
 
-            {/* SUBMIT BUTTON */}
             <button className="btn btn-primary w-full" disabled={isPending} type="submit">
               {!isPending ? (
                 <>
-                  <ShipWheelIcon className="w-5 h-5 mr-2" />
-                  Complete Onboarding
+                  <CameraIcon className="w-5 h-5 mr-2" />
+                  Save Profile
                 </>
               ) : (
-                <>
-                  <LoaderIcon className="animate-spin w-5 h-5 mr-2" />
-                  Onboarding...
-                </>
+                <span>Saving...</span>
               )}
             </button>
           </form>
@@ -195,4 +162,5 @@ const OnboardingPage = () => {
     </div>
   );
 };
-export default OnboardingPage;
+
+export default ProfilePage;

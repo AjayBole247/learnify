@@ -46,8 +46,8 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="max-h-96 bg-base-100 flex items-center justify-center py-4 mt-5 mb-5 ">
-      <div className="border border-primary/25  h-screen card bg-base-200 w-full max-w-3xl shadow-xl mt-25 mb-5  overflow-y-auto">
+    <div className="min-h-screen bg-base-100 flex items-center justify-center py-4 mt-5 mb-5 ">
+      <div className="border border-primary/25 card bg-base-200 w-full max-w-3xl shadow-xl max-h-[90vh]  overflow-y-auto">
         <div className="card-body p-6 sm:p-8">
           <h1 className="text-2xl font-bold text-center mb-6">Edit Profile</h1>
 
